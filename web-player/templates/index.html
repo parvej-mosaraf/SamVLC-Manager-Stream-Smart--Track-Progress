@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>SamVLC Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+
+        .episode {
+            display: flex;
+            align-items: center;
+            margin: 6px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .episode.done {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+
+        .episode span {
+            flex: 1;
+            font-weight: bold;
+        }
+
+        button {
+            margin-left: 8px;
+            padding: 4px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button.play {
+            background: #4caf50;
+            color: white;
+        }
+
+        button.done {
+            background: #2196f3;
+            color: white;
+        }
+
+        button.undo {
+            background: #f44336;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🎬 SamVLC Manager</h1>
+    <p><em>FTP Video Management Made Easy for SamOnline and VLC</em></p>
+
+    <label for="showSelect">Choose a show:</label>
+    <select id="showSelect" onchange="loadShow()">
+        <option value="">-- Select --</option>
+        {% for show in shows %}
+        <option value="{{ show }}">{{ show }}</option>
+        {% endfor %}
+    </select>
+
+    <h2 id="showTitle"></h2>
+    <div id="linkList"></div>
+
+    <script>
+        let currentShow = "";
+        let progress = {}; // { "0": true, "1": false }
+
+        function loadShow() {
+            currentShow = document.getElementById("showSelect").value;
+            if (!currentShow) return;
+
+            fetch(`/load_show/${currentShow}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById("linkList").innerHTML = "<p>No links found</p>";
+                        return;
+                    }
+                    progress = data.progress || {};
+                    document.getElementById("showTitle").innerText = currentShow;
+                    renderLinks(data.links);
+                });
+        }
+
+        function renderLinks(links) {
+            const list = document.getElementById("linkList");
+            list.innerHTML = "";
+
+            links.forEach((link, idx) => {
+                const div = document.createElement("div");
+                div.className = "episode" + (progress[idx] ? " done" : "");
+
+                const span = document.createElement("span");
+                span.textContent = `Episode ${idx + 1}`;
+
+                const playBtn = document.createElement("button");
+                playBtn.textContent = "▶ Play";
+                playBtn.className = "play";
+                playBtn.onclick = () => playLink(link);
+
+                const doneBtn = document.createElement("button");
+                doneBtn.textContent = progress[idx] ? "Undo" : "Done";
+                doneBtn.className = progress[idx] ? "undo" : "done";
+                doneBtn.onclick = () => toggleDone(idx, div, doneBtn);
+
+                div.appendChild(span);
+                div.appendChild(playBtn);
+                div.appendChild(doneBtn);
+
+                list.appendChild(div);
+            });
+        }
+
+        function toggleDone(idx, div, btn) {
+            const key = String(idx);
+            progress[key] = !progress[key];
+
+            if (progress[key]) {
+                div.classList.add("done");
+                btn.textContent = "Undo";
+                btn.className = "undo";
+            } else {
+                div.classList.remove("done");
+                btn.textContent = "Done";
+                btn.className = "done";
+            }
+
+            fetch(`/mark_done/${currentShow}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ progress })
+            });
+        }
+
+        function playLink(link) {
+            fetch(`/play/${currentShow}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ link })
+            });
+        }
+    </script>
+</body>
+
+</html>
