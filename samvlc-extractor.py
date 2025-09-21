@@ -1,12 +1,29 @@
 import requests
 from bs4 import BeautifulSoup
 from pathlib import Path
+from urllib.parse import urlsplit, unquote
+import os
+import re
 
 
-def fetch_and_extract(url, prefix, output_file="extracted_links.txt"):
+def sanitize_name(name: str) -> str:
+    """Remove/replace invalid characters for Windows filenames."""
+    return re.sub(r'[<>:"/\\|?*]', "-", name).strip()
+
+
+def extract_season_name(url: str):
+    """Return the last folder name from the URL as the season name."""
+    decoded = unquote(url)
+    path = urlsplit(decoded).path.rstrip("/")
+    parts = path.split("/")
+    if len(parts) < 1:
+        return None
+    season_name = parts[-1]
+    return season_name
+
+
+def fetch_and_extract(url):
     try:
-        # Fetch HTML
-        prefix = prefix.rstrip("/")  # Ensure no trailing slash
         response = requests.get(url)
         response.raise_for_status()
     except Exception as e:
@@ -14,35 +31,44 @@ def fetch_and_extract(url, prefix, output_file="extracted_links.txt"):
         return
 
     html_content = response.text
-
-    # Parse HTML
     soup = BeautifulSoup(html_content, "html.parser")
 
     # Extract all links
-    links = []
-    for tag in soup.find_all("a", href=True):
-        links.append(tag["href"])
+    links = [tag["href"] for tag in soup.find_all("a", href=True)]
 
-    # (Optional) Keep only video-like links
+    # Filter video links
     video_ext = (".m3u8", ".mp4", ".mkv", ".avi")
     filtered_links = [l for l in links if l.endswith(video_ext) or "m3u8" in l]
 
-    # Force save to custom folder
-    save_dir = Path("D:/User/Desktop")  # ✅ your preferred folder
-    save_dir.mkdir(parents=True, exist_ok=True)  # auto-create if missing
-    output_path = save_dir / output_file
+    # Get season name
+    season_name = extract_season_name(url)
+    if not season_name:
+        print("⚠️ Could not extract season name.")
+        return
 
-    # Write links to file
-    with open(output_path, "w", encoding="utf-8") as f:
+    # Sanitize for Windows
+    safe_season = sanitize_name(season_name)
+
+    # Build folder structure
+    base_dir = Path("D:/User/Desktop/VLC/shows")
+    season_folder = base_dir / safe_season
+    season_folder.mkdir(parents=True, exist_ok=True)
+
+    # Output file
+    output_file = season_folder / "extracted_links.txt"
+
+    with open(output_file, "w", encoding="utf-8") as f:
         for link in filtered_links:
-            f.write(prefix + link + "\n")
+            # Ensure full URL
+            if link.startswith("http"):
+                f.write(link + "\n")
+            else:
+                prefix = f"{urlsplit(url).scheme}://{urlsplit(url).netloc}/"
+                f.write(prefix + link.lstrip("/") + "\n")
 
-    print(
-        f"✅ Extracted {len(filtered_links)} links and saved to {output_path.resolve()}"
-    )
+    print(f"✅ Saved {len(filtered_links)} links to {output_file.resolve()}")
 
 
 if __name__ == "__main__":
     url = input("🔗 Enter the webpage URL: ").strip()
-    prefix = input("🔗 Enter the prefix (e.g., http://172.16.50.xx): ").strip()
-    fetch_and_extract(url, prefix=prefix)
+    fetch_and_extract(url)
