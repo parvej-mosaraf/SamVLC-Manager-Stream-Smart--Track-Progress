@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>SamVLC Manager</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            max-width: 1200px;
+            margin: auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .card {
+            background: white;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .play {
+            background: #4CAF50;
+            color: white;
+            border: none;
+        }
+
+        .done {
+            background: #2196F3;
+            color: white;
+            border: none;
+        }
+
+        .undo {
+            background: #F44336;
+            color: white;
+            border: none;
+        }
+
+        .episode {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            margin-top: 6px;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .episode.doneRow {
+            opacity: 0.5;
+            text-decoration: line-through;
+        }
+
+        .name {
+            flex: 1;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <h1>🎬 SamVLC Manager</h1>
+
+    <div class="card">
+
+        <h2>Create Playlist</h2>
+
+        <label>FTP URL</label>
+        <input id="ftpUrl">
+
+        <label>Playlist Name</label>
+        <input id="playlistName">
+
+        <button onclick="extractPlaylist()">
+            Extract Playlist
+        </button>
+
+        <p id="msg"></p>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Playlists</h2>
+
+        <select id="showSelect" onchange="loadShow()">
+            <option value="">Select Playlist</option>
+            {% for show in shows %}
+            <option value="{{show}}">
+                {{show}}
+            </option>
+            {% endfor %}
+        </select>
+
+    </div>
+
+    <h2 id="showTitle"></h2>
+
+    <div id="linkList"></div>
+
+    <script>
+
+        let currentShow = "";
+        let progress = {};
+
+        async function refreshShows() {
+
+            let res = await fetch("/shows");
+            let shows = await res.json();
+
+            let select = document.getElementById("showSelect");
+
+            select.innerHTML = '<option value="">Select Playlist</option>';
+
+            shows.forEach(show => {
+                let opt = document.createElement("option");
+                opt.value = show;
+                opt.textContent = show;
+                select.appendChild(opt);
+            });
+
+        }
+
+        async function extractPlaylist() {
+
+            let url = document.getElementById("ftpUrl").value;
+            let playlist = document.getElementById("playlistName").value;
+
+            let res = await fetch("/extract", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    url: url,
+                    playlist_name: playlist
+                })
+            });
+
+            let data = await res.json();
+
+            if (data.error) {
+                document.getElementById("msg").innerText = data.error;
+                return;
+            }
+
+            document.getElementById("msg").innerText =
+                `Extracted ${data.episodes} episodes`;
+
+            refreshShows();
+
+        }
+
+        async function loadShow() {
+
+            currentShow =
+                document.getElementById("showSelect").value;
+
+            if (!currentShow) return;
+
+            let res =
+                await fetch(`/load_show/${currentShow}`);
+
+            let data = await res.json();
+
+            progress = data.progress;
+
+            document.getElementById("showTitle")
+                .innerText = currentShow;
+
+            renderEpisodes(data.links);
+
+        }
+
+        function renderEpisodes(links) {
+
+            let container =
+                document.getElementById("linkList");
+
+            container.innerHTML = "";
+
+            links.forEach((link, index) => {
+
+                let row = document.createElement("div");
+
+                row.className =
+                    "episode" + (progress[index] ? " doneRow" : "");
+
+                let title = document.createElement("div");
+                title.className = "name";
+                title.textContent =
+                    `Episode ${index + 1}`;
+
+                let play = document.createElement("button");
+                play.className = "play";
+                play.textContent = "▶ Play";
+
+                play.onclick = () => playEpisode(link);
+
+                let done = document.createElement("button");
+
+                if (progress[index]) {
+                    done.textContent = "Undo";
+                    done.className = "undo";
+                } else {
+                    done.textContent = "Done";
+                    done.className = "done";
+                }
+
+                done.onclick =
+                    () => toggle(index, row, done);
+
+                row.appendChild(title);
+                row.appendChild(play);
+                row.appendChild(done);
+
+                container.appendChild(row);
+
+            });
+
+        }
+
+        function toggle(index, row, btn) {
+
+            let key = String(index);
+
+            progress[key] = !progress[key];
+
+            row.classList.toggle("doneRow");
+
+            if (progress[key]) {
+                btn.textContent = "Undo";
+                btn.className = "undo";
+            } else {
+                btn.textContent = "Done";
+                btn.className = "done";
+            }
+
+            fetch(`/mark_done/${currentShow}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    progress: progress
+                })
+            });
+
+        }
+
+        function playEpisode(link) {
+
+            fetch("/play", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    link: link
+                })
+            });
+
+        }
+
+    </script>
+
+</body>
+
+</html>
