@@ -1,199 +1,289 @@
-# SamVLC Manager
+# 🎬 SamVLC Manager
 
-**FTP Video Management Made Easy for SamOnline and VLC**
+SamVLC Manager is a simple web-based video playlist manager designed to extract video links from FTP/web directories, organize them by show or season, track watched episodes, and play episodes directly using VLC Media Player.
 
-A Python-based web application for extracting video links from SamOnline FTP servers and managing episode watching progress through a local web interface with VLC integration.
+## Features
 
-## 🎯 Project Overview
-
-This project provides a complete workflow for:
-1. **Link Extraction**: Extract video links from SamOnline FTP web pages
-2. **Web Player Interface**: Display episodes in a clean, organized web interface
-3. **Progress Tracking**: Mark episodes as watched/unwatched with persistent storage
-4. **VLC Integration**: Direct playback through VLC media player
-
-## 🏗️ Project Structure
-
-```
-samvlc-manager/
-├── samvlc-extractor.py      # Link extraction script
-├── web-player/              # Web application
-│   ├── app.py              # Flask web server
-│   └── templates/
-│       └── index.html      # Web interface
-├── shows/                   # Storage for show data
-│   └── [Show Folders]/     # Individual show directories
-│       ├── extracted_links.txt  # Video links
-│       └── data.json       # Watch progress data
-├── requirements.txt         # Python dependencies
-└── README.md               # This file
-```
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Python 3.7+
-- VLC Media Player installed
-- Access to SamOnline FTP server
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd samvlc-manager
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Configure VLC path** (if needed)
-   - Edit `web-player/app.py` line 84
-   - Update the VLC executable path to match your installation
-
-4. **Set up storage directory**
-   - The application uses `D:\User\Desktop\VLC\shows` by default
-   - Create this directory or modify the path in `app.py`
-
-### Usage
-
-#### Step 1: Extract Links
-```bash
-python samvlc-extractor.py
-```
-- Enter the SamOnline FTP webpage URL
-- Enter the server prefix (e.g., `http://172.16.50.xx`)
-- Links will be saved to `D:\User\Desktop\extracted_links.txt`
-
-#### Step 2: Organize Content
-1. Create a folder in `shows/` for your show
-2. Move `extracted_links.txt` to the show folder
-3. Rename it to `extracted_links.txt` if needed
-
-#### Step 3: Launch Web Player
-```bash
-cd web-player
-python app.py
-```
-- Open your browser to `http://127.0.0.1:5000`
-- Select your show from the dropdown
-- Start watching and tracking progress!
-
-## 📋 Features
-
-### Link Extractor (`samvlc-extractor.py`)
-- **Web Scraping**: Extracts all video links from SamOnline FTP pages
-- **Filtering**: Automatically filters for video files (.m3u8, .mp4, .mkv, .avi)
-- **Prefix Handling**: Adds server prefix to relative links
-- **Error Handling**: Robust error handling for network issues
-
-### Web Player (`web-player/`)
-- **Show Management**: Browse multiple shows from a dropdown
-- **Episode Listing**: Clean, organized episode display
-- **Progress Tracking**: Mark episodes as watched/unwatched
-- **VLC Integration**: Direct playback through VLC media player
-- **Persistent Storage**: Progress saved in JSON format
-- **Responsive UI**: Clean, modern interface
-
-## 🔧 Configuration
-
-### Customizing Paths
-
-**VLC Path** (in `web-player/app.py`):
-```python
-vlc_path = r"D:\Program Files\VLC\vlc.exe"  # Update this path
-```
-
-**Storage Directory** (in `web-player/app.py`):
-```python
-BASE_DIR = Path(r"D:\User\Desktop\VLC\shows")  # Update this path
-```
-
-**Link Output** (in `samvlc-extractor.py`):
-```python
-save_dir = Path("D:/User/Desktop")  # Update this path
-```
-
-### Server Configuration
-
-The web server runs on:
-- **Host**: 127.0.0.1 (localhost)
-- **Port**: 5000
-- **Debug Mode**: Enabled (for development)
-
-## 📁 Data Structure
-
-### Show Folder Structure
-```
-shows/
-└── [Show Name]/
-    ├── extracted_links.txt    # One link per line
-    └── data.json             # Progress tracking
-```
-
-### Progress Data Format
-```json
-{
-  "0": true,    // Episode 1 watched
-  "1": false,   // Episode 2 not watched
-  "2": true     // Episode 3 watched
-}
-```
-
-## 🛠️ API Endpoints
-
-- `GET /` - Main interface
-- `GET /load_show/<show_name>` - Load show data
-- `POST /mark_done/<show_name>` - Update watch progress
-- `POST /play/<show_name>` - Launch VLC with selected link
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **VLC not opening**
-   - Check VLC installation path in `app.py`
-   - Ensure VLC is properly installed
-
-2. **Links not loading**
-   - Verify `extracted_links.txt` exists in show folder
-   - Check file encoding (should be UTF-8)
-
-3. **Progress not saving**
-   - Check write permissions for `shows` directory
-   - Verify JSON file format
-
-4. **Network errors during extraction**
-   - Check internet connection
-   - Verify SamOnline FTP server accessibility
-   - Check if URL and prefix are correct
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📄 License
-
-This project is open source. Please check the LICENSE file for details.
-
-## ⚠️ Disclaimer
-
-This tool is for educational and personal use only. Please respect the terms of service of any FTP servers you access and ensure you have proper authorization to use the content.
-
-## 📞 Support
-
-For issues and questions:
-1. Check the troubleshooting section
-2. Review the code comments
-3. Open an issue on GitHub
+* Extract video links from an FTP/web directory
+* Create playlists for different shows or seasons
+* Track watched/unwatched episodes
+* Play episodes directly in VLC
+* Simple web interface
+* Save episode progress locally
+* Run the application using a `.bat` file
 
 ---
 
-**Happy Watching! 🎬**
+# Requirements
+
+Before running SamVLC Manager, make sure you have:
+
+* Windows
+* Python 3.x
+* VLC Media Player
+* Internet/network access to the video server
+* Required Python packages
+
+---
+
+# 1. Configure VLC Location
+
+Before running the application, open:
+
+```text
+app.py
+```
+
+Find the VLC path inside the `/play` function:
+
+```python
+vlc_path = r"C:\Program Files\VideoLAN\VLC\vlc.exe"
+```
+
+Change it if VLC is installed in a different location.
+
+For example:
+
+```python
+vlc_path = r"D:\Program Files\VideoLAN\VLC\vlc.exe"
+```
+
+The path must point to the actual `vlc.exe` file.
+
+You can usually find VLC here:
+
+```text
+C:\Program Files\VideoLAN\VLC\vlc.exe
+```
+
+or:
+
+```text
+C:\Program Files (x86)\VideoLAN\VLC\vlc.exe
+```
+
+---
+
+# 2. Install Required Python Packages
+
+Open Command Prompt or PowerShell in the project folder.
+
+Run:
+
+```bash
+pip install -r requirements.txt
+```
+
+If the project does not contain a `requirements.txt` file, install the required packages manually:
+
+```bash
+pip install flask requests beautifulsoup4
+```
+
+---
+
+# 3. Run SamVLC Manager
+
+The easiest way to start the application is using the provided `.bat` file.
+
+Double-click the `.bat` file in the project folder.
+
+For example:
+
+```text
+run.bat
+```
+
+The batch file starts the Flask server.
+
+A successful startup should show something similar to:
+
+```text
+* Serving Flask app 'app'
+* Debug mode: on
+* Running on http://127.0.0.1:5000
+```
+
+Keep the Command Prompt window open while using SamVLC Manager.
+
+---
+
+# 4. Open the Web Interface
+
+After starting the `.bat` file, open a web browser and go to:
+
+```text
+http://127.0.0.1:5000
+```
+
+The SamVLC Manager interface will appear.
+
+---
+
+# 5. Create a Playlist
+
+In the **Create Playlist** section:
+
+1. Enter the FTP/web directory URL.
+2. Enter a playlist name.
+3. Click **Extract Playlist**.
+
+The application will extract available video links and save them locally.
+
+The playlist data is stored inside:
+
+```text
+playlists/
+```
+
+Each show/season has its own folder.
+
+---
+
+# 6. Select a Playlist
+
+Under **Playlists**, select a previously created playlist.
+
+The application will display the available episodes.
+
+For example:
+
+```text
+Episode 1    ▶ Play    Done
+Episode 2    ▶ Play    Done
+Episode 3    ▶ Play    Done
+```
+
+---
+
+# 7. Play an Episode
+
+Click:
+
+```text
+▶ Play
+```
+
+SamVLC Manager sends the video link to VLC Media Player.
+
+VLC must be installed and the correct `vlc.exe` path must be configured in `app.py`.
+
+---
+
+# 8. Track Episode Progress
+
+Click:
+
+```text
+Done
+```
+
+when an episode has been watched.
+
+The button will change to:
+
+```text
+Undo
+```
+
+and the episode will be marked as completed.
+
+The progress is saved in:
+
+```text
+data.json
+```
+
+inside the corresponding playlist folder.
+
+---
+
+# Project Structure
+
+A typical project structure looks like:
+
+```text
+SamVLC-Manager/
+│
+├── app.py
+├── run.bat
+├── requirements.txt
+├── README.md
+│
+├── templates/
+│   └── index.html
+│
+└── playlists/
+    └── Show Name/
+        ├── extracted_links.txt
+        └── data.json
+```
+
+---
+
+# Troubleshooting
+
+## VLC does not open
+
+Check the VLC path in:
+
+```text
+app.py
+```
+
+Make sure it points to:
+
+```text
+vlc.exe
+```
+
+For example:
+
+```python
+vlc_path = r"C:\Program Files\VideoLAN\VLC\vlc.exe"
+```
+
+Also make sure VLC is installed.
+
+---
+
+## The browser cannot connect
+
+Make sure the `.bat` file is running and the terminal shows:
+
+```text
+Running on http://127.0.0.1:5000
+```
+
+Then open:
+
+```text
+http://127.0.0.1:5000
+```
+
+---
+
+## Playlist extraction fails
+
+Check that:
+
+* The FTP/web URL is accessible.
+* The computer is connected to the required network.
+* The URL contains accessible video files.
+* The video server is available.
+
+---
+
+# Stopping the Application
+
+To stop SamVLC Manager, return to the Command Prompt window running the application and press:
+
+```text
+Ctrl + C
+```
+
+---
+
+# License
+
+This project is intended for personal and educational use.
